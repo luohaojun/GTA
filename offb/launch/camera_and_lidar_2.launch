@@ -1,0 +1,17 @@
+<launch>
+    <!-- Run yolo path -->
+    <param name = "weightpath" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/yolov7-tiny-custom_luo_2.0_best.weights" />
+    <param name = "cfgpath" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/yolov7-tiny-custom_luo.cfg" />
+    <param name = "classnamepath" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/luo.names" />
+
+    <!-- Save video path -->
+    <param name = "video" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/tracking_v7_balllidartest1.avi" />
+    <param name = "videoyolo" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/yolo_v7_balllidartest1.avi" />
+    <param name = "videogt" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/gt_v7_balllidartest1.avi" />
+
+    <!-- Save gt.txt path -->
+    <param name = "gt_txt" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/gt_v7_lidartest1.txt" />
+
+    <node name="camera_and_lidar_2" pkg = "offb" type = "camera_and_lidar_2" output = "screen">
+    </node>
+</launch>
