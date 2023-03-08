@@ -1,17 +1,17 @@
 <launch>
     <!-- Run yolo path -->
-    <param name = "weightpath" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/yolov7-tiny-custom_luo_2.0_best.weights" />
-    <param name = "cfgpath" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/yolov7-tiny-custom_luo.cfg" />
-    <param name = "classnamepath" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/include/yolo/luo.names" />
+    <param name = "weightpath" type = "String" value = "/home/luo/gta/src/GTA/offb/src/include/yolo/yolov7-tiny-custom_luo_2.0_best.weights" />
+    <param name = "cfgpath" type = "String" value = "/home/luo/gta/src/GTA/offb/src/include/yolo/yolov7-tiny-custom_luo.cfg" />
+    <param name = "classnamepath" type = "String" value = "/home/luo/gta/src/GTA/offb/src/include/yolo/luo.names" />
 
     <!-- Save video path -->
-    <param name = "video_path" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/log/tracking_v7_balllidartest1.avi" />
-    <param name = "videoyolo_path" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/log/yolo_v7_balllidartest1.avi" />
-    <param name = "videolidar_path" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/log/lidar_balllidartest1.avi" />
-    <param name = "videogt_path" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/log/gt_v7_balllidartest1.avi" />
+    <param name = "video_path" type = "String" value = "/home/luo/gta/src/GTA/offb/src/log/tracking_v7_balllidartest1.avi" />
+    <param name = "videoyolo_path" type = "String" value = "/home/luo/gta/src/GTA/offb/src/log/yolo_v7_balllidartest1.avi" />
+    <param name = "videolidar_path" type = "String" value = "/home/luo/gta/src/GTA/offb/src/log/lidar_balllidartest1.avi" />
+    <param name = "videogt_path" type = "String" value = "/home/luo/gta/src/GTA/offb/src/log/gt_v7_balllidartest1.avi" />
 
     <!-- Save gt.txt path -->
-    <param name = "gt_txt" type = "String" value = "/home/luo/gta/src/AUTO/offb/src/log/gt_v7_lidartest1.txt" />
+    <param name = "gt_txt" type = "String" value = "/home/luo/gta/src/GTA/offb/src/log/gt_v7_lidartest1.txt" />
 
     <node name="camera_and_lidar" pkg = "offb" type = "camera_and_lidar" output = "screen">
     </node>

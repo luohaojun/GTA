@@ -25,6 +25,18 @@ find_package(OpenCV 4 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.10 REQUIRED)
 
+set(ncnn_DIR "/home/luo/gta/src/GTA/offb/lib/cmake/ncnn")
+find_package(ncnn REQUIRED)
+if (${ncnn_FOUND})
+  message("-- NCNN found.")
+  message("-- NCNN_VULKAN flag is ${NCNN_VULKAN}")
+  if (${NCNN_VULKAN})
+    message("-- AUTO-ENABLING GPU_SUPPORT")
+    set(GPU_SUPPORT OFF)
+  endif()
+  include_directories(${ncnn_INCLUDE})
+endif()
+
 add_message_files(
  FILES
  obj.msg
@@ -135,12 +147,28 @@ add_executable(syn
    src/syn.cpp
    src/include/movement.cpp
    src/include/run_yolo_only.cpp)
-
 target_link_libraries(syn
    ${OpenCV_LIBRARIES}
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES})
 
+add_executable(yolo_ncnn
+   src/ncnn_yolo.cpp
+   src/run_ncnn.hpp)
 
+target_link_libraries(yolo_ncnn
+    ncnn
+   ${OpenCV_LIBRARIES}
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES})
+
+add_executable(yolo_ncnn_2.0
+   src/ncnn_yolo_2.0.cpp
+   src/include/run_ncnn_2.0.cpp)
+target_link_libraries(yolo_ncnn_2.0
+    ncnn
+   ${OpenCV_LIBRARIES}
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES})
 
 

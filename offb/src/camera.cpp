@@ -18,9 +18,9 @@ using namespace std;
 static cv::Mat frame, res, gt;
 static geometry_msgs::PoseStamped send;
 
-static cv::String weightpath ="/home/luo/gta/src/AUTO/offb/src/include/yolo/yolov7-tiny-custom_luo_2.0_best.weights";
-static cv::String cfgpath ="/home/luo/gta/src/AUTO/offb/src/include/yolo/yolov7-tiny-custom_luo.cfg";
-static cv::String classnamepath = "/home/luo/gta/src/AUTO/offb/src/include/yolo/luo.names";
+static cv::String weightpath ="/home/luo/gta/src/GTA/offb/src/include/yolo/yolov7-tiny-custom_luo_2.0_best.weights";
+static cv::String cfgpath ="/home/luo/gta/src/GTA/offb/src/include/yolo/yolov7-tiny-custom_luo.cfg";
+static cv::String classnamepath = "/home/luo/gta/src/GTA/offb/src/include/yolo/luo.names";
 
 
 static run_yolo Yolonet(cfgpath, weightpath, classnamepath, float(0.1));
@@ -87,9 +87,9 @@ void callback(const sensor_msgs::CompressedImageConstPtr & rgbimage, const senso
 
 int main(int argc, char** argv)
 {
-    cv::VideoWriter video("/home/luo/gta/src/AUTO/offb/src/include/yolo/tracking_v7_balltest1.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 8, cv::Size(640, 480));
-    cv::VideoWriter videoyolo("/home/luo/gta/src/AUTO/offb/src/include/yolo/yolo_v7_balltest1.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 8, cv::Size(640, 480));
-    cv::VideoWriter videogt("/home/luo/gta/src/AUTO/offb/src/include/yolo/gt_v7_balltest1.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 8, cv::Size(640, 480));
+    // cv::VideoWriter video("/home/luo/gta/src/AUTO/offb/src/include/yolo/tracking_v7_balltest1.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 8, cv::Size(640, 480));
+    // cv::VideoWriter videoyolo("/home/luo/gta/src/AUTO/offb/src/include/yolo/yolo_v7_balltest1.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 8, cv::Size(640, 480));
+    // cv::VideoWriter videogt("/home/luo/gta/src/AUTO/offb/src/include/yolo/gt_v7_balltest1.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 8, cv::Size(640, 480));
 
     int stateSize = 8;
     int measSize = 5;
@@ -250,7 +250,7 @@ int main(int argc, char** argv)
                 for(auto stuff:temp)
                 {
                     cout<<stuff.classnameofdetection<<endl;
-                    if(stuff.classnameofdetection=="ball")
+                    if(stuff.classnameofdetection=="uav")
                     {
                         potential.push_back(stuff);
                         potential_c.push_back(stuff.confidence);
@@ -284,7 +284,7 @@ int main(int argc, char** argv)
                     cv::Point placetext = cv::Point((interested.x-10),(interested.y-24));
 
 
-                    if(confidence > 50)
+                    if(confidence > 20)
                     {
                         center_true=cv::Point(interested.x+interested.width/2, interested.y+interested.height/2);
                         cv::rectangle(res, interested, CV_RGB(255,255,0), 1);
@@ -354,7 +354,7 @@ int main(int argc, char** argv)
                     Rect.x = state.at<float>(0) - Rect.width / 2;
                     Rect.y = state.at<float>(1) - Rect.height / 2;
                     center_true=cv::Point(Rect.x+Rect.width/2, Rect.y+Rect.height/2);
-                    if(confidence <= 50)
+                    if(confidence <= 20)
                         cv::rectangle(res, Rect, CV_RGB(0,255,0), 1);
                 }
             }
@@ -402,12 +402,12 @@ int main(int argc, char** argv)
             cv::imshow("Yolo", frame);
             cv::imshow("Tracking...", res);
             cv::waitKey(20);
-            video.write(res);
-            videoyolo.write(frame);
+            // video.write(res);
+            // videoyolo.write(frame);
 
 
             cv::putText(gt, to_string(counter),cv::Point(20,20),cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(0,0,0));
-            videogt.write(gt);
+            // videogt.write(gt);
             counter++;
         }
         ros::spinOnce();

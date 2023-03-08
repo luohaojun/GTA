@@ -179,9 +179,9 @@ void getdepth(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl, objectinfo &potential)
 
     string windowName = "LiDAR data on image overlay";
 
-	cv::namedWindow( windowName, cv::WINDOW_AUTOSIZE);
-	cv::imshow(windowName, overlay);
-	cv::waitKey(20);
+	// cv::namedWindow( windowName, cv::WINDOW_AUTOSIZE);
+	// cv::imshow(windowName, overlay);
+	// cv::waitKey(20);
 
 }
 
@@ -295,23 +295,23 @@ int main(int argc, char **argv)
     run_yolo Yolonet(cfgpath, weightpath, classnamepath, float(0.1));
     int counter = 0;
 
-    //creat video file
-    cv::String video_path;
-    cv::String videoyolo_path;
-    cv::String videogt_path;
-    cv::String videolidar_path;
-    nh.getParam("video_path", video_path);
-    nh.getParam("videoyolo_path", videoyolo_path);
-    nh.getParam("videogt_path", videogt_path);
-    nh.getParam("videolidar_path", videolidar_path);
-    cv::VideoWriter video(video_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
-    cv::VideoWriter videoyolo(videoyolo_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
-    cv::VideoWriter videogt(videogt_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
-    cv::VideoWriter videolidar(videolidar_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
+    // //creat video file
+    // cv::String video_path;
+    // cv::String videoyolo_path;
+    // cv::String videogt_path;
+    // cv::String videolidar_path;
+    // nh.getParam("video_path", video_path);
+    // nh.getParam("videoyolo_path", videoyolo_path);
+    // nh.getParam("videogt_path", videogt_path);
+    // nh.getParam("videolidar_path", videolidar_path);
+    // cv::VideoWriter video(video_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
+    // cv::VideoWriter videoyolo(videoyolo_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
+    // cv::VideoWriter videogt(videogt_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
+    // cv::VideoWriter videolidar(videolidar_path, cv::VideoWriter::fourcc('M','J','P','G'), 8, cv::Size(640,480));
 
-    //creat txt file path
-    cv::String gt_txt;
-    nh.getParam("gt_txt", gt_txt);
+    // //creat txt file path
+    // cv::String gt_txt;
+    // nh.getParam("gt_txt", gt_txt);
 
 
 
@@ -387,13 +387,13 @@ int main(int argc, char **argv)
                 predRect.y = state.at<float>(1) - predRect.height / 2;
 
 
-                ofstream save(gt_txt, ios::app);
-                save<<counter<<endl;
-                save<<predRect.x <<endl;
-                save<<predRect.y <<endl;
-                save<<predRect.x + predRect.width <<endl;
-                save<<predRect.y + predRect.height<<endl<<endl;;
-                save.close();
+                // ofstream save(gt_txt, ios::app);
+                // save<<counter<<endl;
+                // save<<predRect.x <<endl;
+                // save<<predRect.y <<endl;
+                // save<<predRect.x + predRect.width <<endl;
+                // save<<predRect.y + predRect.height<<endl<<endl;;
+                // save.close();
 
 
                 //                cv::Scalar color(rand()&255, rand()&255, rand()&255);
@@ -472,6 +472,7 @@ int main(int argc, char **argv)
                     int depthbox_h = potential[maxElementIndex].boundingbox.height * 0.35;
                     cv::Point depthbox_vertice1 = cv::Point(potential[maxElementIndex].center_bdbox.x - depthbox_w / 2, potential[maxElementIndex].center_bdbox.y - depthbox_w / 2);
                     cv::Point depthbox_vertice2 = cv::Point(potential[maxElementIndex].center_bdbox.x + depthbox_w / 2, potential[maxElementIndex].center_bdbox.y + depthbox_h / 2);
+                    cout<<"depthbox_vertice1: "<<depthbox_vertice1<<", depthbox_vertice2: "<<depthbox_vertice2<<endl;
 
                     pcl::PointCloud<pcl::PointXYZ>::Ptr depth_pcl(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -554,10 +555,10 @@ int main(int argc, char **argv)
                     }
 
                     string windowName = "LiDAR data on image overlay";
-                    cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
-                    cv::imshow(windowName, overlay);
-                    cv::waitKey(20);
-                    videolidar.write(overlay);
+                    // cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
+                    // cv::imshow(windowName, overlay);
+                    // cv::waitKey(20);
+                    // videolidar.write(overlay);
                     /******************************fuse lidar and RGB camera**********************/
 
 
@@ -687,15 +688,15 @@ int main(int argc, char **argv)
             string d = "distance: ";
             string textoutputonframe =d+temp_depth + " m";
             //cv::putText(res, textoutputonframe, text,cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(180,140,120));
-            cv::imshow("Yolo", frame);
-            cv::imshow("Tracking...", res);
-            cv::waitKey(20);
-            video.write(res);
-            videoyolo.write(frame);
+            // cv::imshow("Yolo", frame);
+            // cv::imshow("Tracking...", res);
+            // cv::waitKey(20);
+            // video.write(res);
+            // videoyolo.write(frame);
 
 
             cv::putText(gt, to_string(counter),cv::Point(20,20),cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(0,0,0));
-            videogt.write(gt);
+            // videogt.write(gt);
             counter++;
         }
         ros::spinOnce();
