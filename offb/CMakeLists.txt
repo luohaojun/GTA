@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_msgs
   roscpp
   std_msgs
+  nav_msgs
   cv_bridge
   image_transport
   sensor_msgs
@@ -21,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
 )
 
-find_package(OpenCV 4 REQUIRED)
+find_package(OpenCV 4  REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.10 REQUIRED)
 
@@ -143,6 +144,15 @@ target_link_libraries(camera_and_lidar_2
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES})
 
+add_executable(Calibrate
+   src/Calibrate.cpp
+   src/include/movement.cpp
+   src/include/run_yolo_only.cpp)
+target_link_libraries(Calibrate
+   ${OpenCV_LIBRARIES}
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES})
+
 add_executable(syn
    src/syn.cpp
    src/include/movement.cpp
@@ -152,23 +162,38 @@ target_link_libraries(syn
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES})
 
-add_executable(yolo_ncnn
-   src/ncnn_yolo.cpp
+add_executable(yolo_lidar
+   src/yolo_lidar.cpp
    src/run_ncnn.hpp)
 
-target_link_libraries(yolo_ncnn
+target_link_libraries(yolo_lidar
     ncnn
    ${OpenCV_LIBRARIES}
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES})
 
-add_executable(yolo_ncnn_2.0
-   src/ncnn_yolo_2.0.cpp
+add_executable(yolo_lidar_depthCam
+   src/yolo_lidar_depthCam.cpp
    src/include/run_ncnn_2.0.cpp)
-target_link_libraries(yolo_ncnn_2.0
+target_link_libraries(yolo_lidar_depthCam
     ncnn
    ${OpenCV_LIBRARIES}
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES})
+
+add_executable(yolo_depthCam
+   src/yolo_depthCam.cpp
+   src/include/run_ncnn_2.0.cpp)
+target_link_libraries(yolo_depthCam
+    ncnn
+   ${OpenCV_LIBRARIES}
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES})
+
+add_executable(gta_rviz
+   src/gta_rviz.cpp)
+target_link_libraries(gta_rviz
+   ${catkin_LIBRARIES}
+)
 
 

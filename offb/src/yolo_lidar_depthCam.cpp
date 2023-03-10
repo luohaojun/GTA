@@ -1,5 +1,5 @@
 // #include "include/yolo.h"
-#include "run_ncnn_3.0.hpp"
+#include "include/run_ncnn_2.0.h"
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -15,14 +15,12 @@
 using namespace Eigen;
 using namespace std;
 
-static cv::Mat frame, res, gt;
+static cv::Mat frame, res, gt, depth_c;
 static geometry_msgs::PoseStamped send;
 Vector3d rgb_2_lidar = {-0.0369998, 0.0321837, 0.0480197};
 
 static char* parampath = "/home/luo/lala/src/haha/yolov4-tiny-opt.param";
 static char* binpath = "/home/luo/lala/src/haha/yolov4-tiny-opt.bin";
-int target_size = 416;
-static run_ncnn yolonet(parampath, binpath, target_size);
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -30,7 +28,7 @@ cv::Mat P_rect_00(3, 4, cv::DataType<double>::type);
 cv::Mat R_rect_00(4, 4, cv::DataType<double>::type);
 cv::Mat RT(4, 4, cv::DataType<double>::type); 
 
-
+static int target_size = 416;
 
 
 static double fx, fy, cx, cy; //focal length and principal point
@@ -73,21 +71,23 @@ geometry_msgs::PoseStamped obj_c(int x_pixel, int y_pixel, double z_depth)
 }
 
 
-
-void callback(const sensor_msgs::CompressedImageConstPtr & rgbimage, const sensor_msgs::PointCloud2::ConstPtr &pcl, const sensor_msgs::ImageConstPtr & depth)
+// static run_ncnn yolonet(parampath, binpath, target_size);
+void callback(const sensor_msgs::CompressedImageConstPtr & rgbimage, const sensor_msgs::PointCloud2::ConstPtr &pcl,
+                const sensor_msgs::ImageConstPtr & depthimage)
 {
-    // cv_bridge::CvImageConstPtr depth_ptr;
-    // try
-    // {
-    //     depth_ptr  = cv_bridge::toCvCopy(depth, depth->encoding);
-    // }
-    // catch (cv_bridge::Exception& e)
-    // {
-    //     ROS_ERROR("cv_bridge exception: %s", e.what());
-    //     return;
-    // }
-    // cv::Mat image_dep = depth_ptr->image;
+    cv_bridge::CvImageConstPtr depth_ptr;
+    try
+    {
+        depth_ptr  = cv_bridge::toCvCopy(depthimage, depthimage->encoding);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
+    cv::Mat image_dep = depth_ptr->image;
     // yolonet.getdepthdata(image_dep);
+    depth_c = image_dep;
     // cout<<"getdepthdata done !"<<endl;
 
     send.header.stamp = rgbimage->header.stamp;
@@ -104,9 +104,7 @@ void callback(const sensor_msgs::CompressedImageConstPtr & rgbimage, const senso
     {
         ROS_ERROR("cv_bridge exception: %s", e.what());
     }
-    cout<<"RGB size: "<<frame.size<<endl;
-    cout<<"Point cloud size: "<<pc->points.size()<<endl;
-    // cout<<"Depth size: "<<yolonet.depthdata.size<<endl;
+    cout<<"Input RGB img size: "<<frame.size<<endl;
 }
 
 
@@ -147,7 +145,8 @@ void removeClosedPointCloud(const pcl::PointCloud<PointT> &cloud_in,
 
 int main(int argc, char** argv)
 {
-    // static run_ncnn yolonet(parampath, binpath, target_size);
+    static run_ncnn yolonet(parampath, binpath, target_size);
+    cout<<"yolonet.frame size: "<<yolonet.objects.size()<<endl;
     int counter = 0;
 
     int stateSize = 8;
@@ -193,8 +192,6 @@ int main(int argc, char** argv)
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, sensor_msgs::PointCloud2, sensor_msgs::Image> MySyncPolicy;
     message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), subimage, subpcl, subdepth);
     sync.registerCallback(boost::bind(&callback, _1, _2, _3));
-    
-
 
     ros::Subscriber camera_info_sub = nh.subscribe("/camera/aligned_depth_to_color/camera_info", 1, camera_info_cb);
 
@@ -212,6 +209,9 @@ int main(int argc, char** argv)
     int w = 200,h = 200;
     double ticks = 0;
     int i=0;
+    int fail_measured = 0;
+    int lidar_use_count = 0;
+    int D_camera_use_count = 0;
 
     cv::Point center_true;
     cv::Point center_pred;
@@ -231,10 +231,12 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         time_start = ros::Time::now().toSec();
+        
         if(!frame.empty())
         {
             double precTick = ticks;
             ticks = (double) cv::getTickCount();
+            yolonet.getdepthdata(depth_c);
 
             dT = (ticks - precTick) / cv::getTickFrequency(); //seconds
             if (found)
@@ -284,24 +286,23 @@ int main(int argc, char** argv)
             }
 
             double starttime = ros::Time::now().toSec();
-            cout << "hhhhhhh" << endl;
+
             yolonet.detect_yolo(frame);
-            cout<<"hhh"<<endl;
 
             // Yolonet.rundarknet(frame);
             double endtime = ros::Time::now().toSec();
             double deltatime = endtime - starttime;
             //cout<<deltatime<<endl;
             fps = 1/deltatime;
-            cout<<"fps: "<<fps<<endl;
+            cout<<"Object detection fps: "<<fps<<endl;
             if(fpss.size()>2000)
                 fpss.clear();
             fpss.push_back(fps);
             fps_average = accumulate(fpss.begin(), fpss.end(),0.0)/fpss.size();
-            cout<<"fps_avg: "<<fps_average<<endl;
+            cout<<"Object detection fps_avg: "<<fps_average<<endl;
 
             vector<Object> temp = yolonet.objects;
-            cout<<"temp size: "<<temp.size()<<endl;
+            cout<<"Objects detected number: "<<temp.size()<<endl;
 
             cv::Rect interested;
             vector<Object> potential;
@@ -314,7 +315,7 @@ int main(int argc, char** argv)
             {
                 for(auto stuff:temp)
                 {
-                    cout<<stuff.classnameofdetection<<endl;
+                    cout<<"Objects interested name: "<<stuff.classnameofdetection<<endl;
                     if(stuff.classnameofdetection=="ball")
                     {
                         potential.push_back(stuff);
@@ -322,7 +323,7 @@ int main(int argc, char** argv)
                         potential_c_area.push_back(stuff.rect.area());
                     }
                 }
-                cout<<"potential size: "<<potential.size()<<endl;
+                cout<<"Objects interested number: "<<potential.size()<<endl;
 
                 if(potential.size()!=0)
                 {
@@ -350,6 +351,10 @@ int main(int argc, char** argv)
                     cv::Point depthbox_vertice1 = cv::Point(potential[maxElementIndex].center_bdbox.x - depthbox_w / 2, potential[maxElementIndex].center_bdbox.y - depthbox_w / 2);
                     cv::Point depthbox_vertice2 = cv::Point(potential[maxElementIndex].center_bdbox.x + depthbox_w / 2, potential[maxElementIndex].center_bdbox.y + depthbox_h / 2);
                     // cout<<"depthbox_vertice1: "<<depthbox_vertice1<<", depthbox_vertice2: "<<depthbox_vertice2<<endl;
+                    
+                    // remove NAN points
+                    std::vector<int> NAN_indices;
+                    pcl::removeNaNFromPointCloud(*pc, *pc, NAN_indices);
 
                     pcl::PointCloud<pcl::PointXYZ>::Ptr depth_pcl(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -373,19 +378,17 @@ int main(int argc, char** argv)
                         else
                         {
                             depth_pcl->points.push_back(pc->points[i]);
+                            cv::circle(overlay, pt, 1, cv::Scalar(0, 255, 0), cv::FILLED);
                         }
-
-                        cv::circle(overlay, pt, 1, cv::Scalar(0, 255, 0), cv::FILLED);
+                        
                     }
-                    cout<<"depth_pcl->points.size(): "<<depth_pcl->points.size()<<endl;
-                    if (depth_pcl->points.size() > 0)
+                    // cout<<"depth_pcl->points.size(): "<<depth_pcl->points.size()<<endl;
+                    if (depth_pcl->points.size() > 2)
                     {
-                        // remove NAN points
-                        std::vector<int> NAN_indices;
-                        pcl::removeNaNFromPointCloud(*depth_pcl, *depth_pcl, NAN_indices);
+                        
 
                         // remove closed points
-                        removeClosedPointCloud(*depth_pcl, *depth_pcl, 0.1);
+                        // removeClosedPointCloud(*depth_pcl, *depth_pcl, 0.1);
                           
 
                         // Creating the KdTree object for the search method of the extraction
@@ -395,7 +398,7 @@ int main(int argc, char** argv)
                         // Cluster
                         std::vector<pcl::PointIndices> cluster_indices;
                         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-                        ec.setClusterTolerance(0.2); // 2cm
+                        ec.setClusterTolerance(0.05); // 2cm
                         ec.setMinClusterSize(1);
                         ec.setMaxClusterSize(25000);
                         ec.setSearchMethod(tree);
@@ -423,58 +426,66 @@ int main(int argc, char** argv)
                         X.at<double>(2, 0) = centroid_depth[2];
                         X.at<double>(3, 0) = 1;
                         Y = P_rect_00 * R_rect_00 * RT * X;
-                        potential[maxElementIndex].depth = Y.at<double>(2, 0);//depth from lidar
-                        measured = true;
+                        potential[maxElementIndex].depth = Y.at<double>(2, 0);
+                        if(abs(potential[maxElementIndex].depth - depth_) >= 2.0 && depth_ > 0.1)
+                        {
+                            potential[maxElementIndex].depth = 0.0;
+                        }
                     }
                     else
                     {
-                        measured = false;
                         cout<<"No point cloud found!"<<endl;
+                        potential[maxElementIndex].depth = 0.0;
                     }
 
-                    string windowName = "LiDAR data on image overlay";
+                    // string windowName = "LiDAR data on image overlay";
                     // cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
                     // cv::imshow(windowName, overlay);
                     // cv::waitKey(20);
                     // videolidar.write(overlay);
                     /******************************fuse lidar and RGB camera**********************/
 
-                    // /**********************fuse depth data*************************/
-                    // cv::Rect letsgetdepth(depthbox_vertice1, depthbox_vertice2);
-                    // cv::Mat ROI(yolonet.depthdata, letsgetdepth);
-                    // cv::Mat ROIframe;
-                    // ROI.copyTo(ROIframe);
-                    // vector<cv::Point> nonzeros;
-                    // cv::findNonZero(ROIframe, nonzeros);
-                    // vector<double> nonzerosvalue;
-                    // for (auto temp : nonzeros)
-                    // {
-                    //     double depth = ROIframe.at<ushort>(temp);
-                    //     nonzerosvalue.push_back(depth);
-                    // }
-                    // double depth_average;
-                    // if (nonzerosvalue.size() != 0)
-                    //     depth_average = accumulate(nonzerosvalue.begin(), nonzerosvalue.end(), 0.0) / nonzerosvalue.size();
-                    // double depth_cam = 0.001 * depth_average;//depth from camera
-                    // /**********************fuse depth data*************************/
+                    /**********************fuse depth data*************************/
+                    if(potential[maxElementIndex].depth < 1.0)
+                    {
+                        cv::Rect letsgetdepth(depthbox_vertice1, depthbox_vertice2);
+                        cv::Mat ROI(yolonet.depthdata, letsgetdepth);
+                        cv::Mat ROIframe;
+                        ROI.copyTo(ROIframe);
+                        vector<cv::Point> nonzeros;
+                        cv::findNonZero(ROIframe, nonzeros);
+                        vector<double> nonzerosvalue;
+                        for (auto temp : nonzeros)
+                        {
+                            double depth_temp = ROIframe.at<ushort>(temp);
+                            nonzerosvalue.push_back(depth_temp);
+                        }
+                        double depth_average;
+                        if (nonzerosvalue.size() != 0)
+                            depth_average = accumulate(nonzerosvalue.begin(), nonzerosvalue.end(), 0.0) / nonzerosvalue.size();
+                        double depth_cam = 0.001 * depth_average; // depth from camera
+                        camera_z = depth_cam;                     // switch to depth-camera
+                        
+                        measured = true;
+                        notFoundCount = 0;
+                        cout << "depth is from depth-camera!" << endl;
+                        D_camera_use_count++;
+                    }
+                    /**********************fuse depth data*************************/
 
-                    // //switch to depth camera or lidar
-                    // if(potential[maxElementIndex].depth < 1.0)
-                    // {
-                    //     depth = camera_z = depth_cam;
-                    //     cout<<"depth is from depth-camera!"<<endl;
-                    // }
-                    // else
-                    // {
-                    //     depth = camera_z = potential[maxElementIndex].depth;
-                    //     cout<<"depth is from lidar!"<<endl;
-                    // }
-                    
-                    depth = camera_z = potential[maxElementIndex].depth;
+                    //switch to lidar
+                    else
+                    {
+                        camera_z = potential[maxElementIndex].depth;
+                        cout<<"depth is from lidar!"<<endl;
+                        lidar_use_count++;
+                    }
+
+
                     prob = potential[maxElementIndex].prob;
 
                     char temp_depth[40];
-                    sprintf(temp_depth, "%.2f", depth);
+                    sprintf(temp_depth, "%.2f", camera_z);
                     string d = "z_C: ";
                     string textoutputonframe =d+temp_depth + " m";
                     cv::Point placetext = cv::Point((interested.x-10),(interested.y-24));
@@ -489,7 +500,7 @@ int main(int argc, char** argv)
                 }
             }
             time_end=ros::Time::now().toSec();
-            cout<<"ms: "<<time_end-time_start<<endl<<endl;
+            cout<<"Object tracking module time ms: "<<time_end-time_start<<endl;
             if(!got)
             {
                 notFoundCount++;
@@ -500,16 +511,27 @@ int main(int argc, char** argv)
                     found = false;
                 }
             }
-            else if(measured)
+            else 
             {
                 //            cout<<"hey"<<endl;
                 // measured = true;
-                notFoundCount = 0;
-                meas.at<float>(0) = interested.x + interested.width /  2;
-                meas.at<float>(1) = interested.y + interested.height / 2;
-                meas.at<float>(2) = camera_z;
-                meas.at<float>(3) = interested.width;
-                meas.at<float>(4) = interested.height;
+                // notFoundCount = 0;
+                // meas.at<float>(0) = interested.x + interested.width /  2;
+                // meas.at<float>(1) = interested.y + interested.height / 2;
+                // meas.at<float>(2) = camera_z;
+                // meas.at<float>(3) = interested.width;
+                // meas.at<float>(4) = interested.height;
+
+                if(measured)
+                {
+                    notFoundCount = 0;
+                    meas.at<float>(0) = interested.x + interested.width / 2;
+                    meas.at<float>(1) = interested.y + interested.height / 2;
+                    meas.at<float>(2) = camera_z;
+                    meas.at<float>(3) = interested.width;
+                    meas.at<float>(4) = interested.height;
+                }
+
                 if (!found) // First detection!
                 {
                     // >>>> Initialization
@@ -535,14 +557,14 @@ int main(int argc, char** argv)
                     kf.statePost = state;
                     found = true;
                 }
-                else
+                else if(measured)
                 {
                     kf.correct(meas); // Kalman Correction                    
 
                     cv::Point center;
                     center.x = state.at<float>(0);
                     center.y = state.at<float>(1);
-                    double z_c_temp = state.at<float>(2);
+                    depth = state.at<float>(2);
 
                     cv::Rect Rect;
                     Rect.width = temprect.width;
@@ -558,10 +580,12 @@ int main(int argc, char** argv)
 
             if(measured)
             {
-                cout<<"show measure: "<<endl;
+                cout<<"show measure "<<endl;
                 send = obj_c(center_true.x, center_true.y,depth);
                 // send.header.stamp = ros::Time::now();
-                cout<<"object depth: "<<depth<<endl;
+                cout<<"object depth: "<<depth<<endl<<endl;
+                cout << "D_camera_use_count: " << D_camera_use_count << endl;
+                cout << "lidar_use_count: " << lidar_use_count << endl;
             }
             else
             {
@@ -569,7 +593,9 @@ int main(int argc, char** argv)
                 cv::rectangle(res, predRect, CV_RGB(255,0,0), 1);
                 send = obj_c(center_pred.x, center_pred.y,depth_);
                 // send.header.stamp = ros::Time::now();
-                 cout<<"object depth_: "<<depth_<<endl<<endl;
+                cout<<"object depth_: "<<depth_<<endl<<endl;
+                cout << "D_camera_use_count: " << D_camera_use_count << endl;
+                cout << "lidar_use_count: " << lidar_use_count << endl;
             }
             publish_obj_c.publish(send);
             // publish_obj_w.publish(obj_pos_w);

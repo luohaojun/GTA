@@ -250,7 +250,7 @@ int main(int argc, char** argv)
                 for(auto stuff:temp)
                 {
                     cout<<stuff.classnameofdetection<<endl;
-                    if(stuff.classnameofdetection=="uav")
+                    if(stuff.classnameofdetection=="ball")
                     {
                         potential.push_back(stuff);
                         potential_c.push_back(stuff.confidence);
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
                     {
                         center_true=cv::Point(interested.x+interested.width/2, interested.y+interested.height/2);
                         cv::rectangle(res, interested, CV_RGB(255,255,0), 1);
-                        //cv::putText(res, textoutputonframe, placetext,cv::FONT_HERSHEY_COMPLEX_SMALL,1,CV_RGB(255,255,0));
+                        // cv::putText(res, textoutputonframe, placetext,cv::FONT_HERSHEY_COMPLEX_SMALL,1,CV_RGB(255,255,0));
                     }
                 }
             }
@@ -399,9 +399,9 @@ int main(int argc, char** argv)
             string d = "distance: ";
             string textoutputonframe =d+temp_depth + " m";
             //cv::putText(res, textoutputonframe, text,cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(180,140,120));
-            cv::imshow("Yolo", frame);
-            cv::imshow("Tracking...", res);
-            cv::waitKey(20);
+            // cv::imshow("Yolo", frame);
+            // cv::imshow("Tracking...", res);
+            // cv::waitKey(20);
             // video.write(res);
             // videoyolo.write(frame);
 

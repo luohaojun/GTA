@@ -46,7 +46,7 @@ struct Object
     string classnameofdetection;
     cv::Mat frame;
     cv::Point center_bdbox;
-    double depth;
+    double depth = 0.0;
 };
 
 static const char *class_names[] = {"null", "ball", "uav"};
