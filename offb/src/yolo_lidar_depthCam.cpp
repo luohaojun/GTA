@@ -17,7 +17,12 @@ using namespace std;
 
 static cv::Mat frame, res, gt, depth_c;
 static geometry_msgs::PoseStamped send;
-Vector3d rgb_2_lidar = {-0.0369998, 0.0321837, 0.0480197};
+Vector3d rgb_2_lidar = {0.0287147, 0.0296145, -0.00599914};
+// extrinsic
+// 0.00639172  -0.999441    -0.0328174          0.0287147
+// 0.000247958  0.0328196   -0.999461           0.0296145
+// 0.99998      0.00638014   0.000457593        -0.00599914
+// 0            0            0                     1
 
 static char* parampath = "/home/luo/lala/src/haha/yolov4-tiny-opt.param";
 static char* binpath = "/home/luo/lala/src/haha/yolov4-tiny-opt.bin";
@@ -34,9 +39,9 @@ static int target_size = 416;
 static double fx, fy, cx, cy; //focal length and principal point
 void camera_info_cb(const sensor_msgs::CameraInfoPtr& msg )
 {
-    RT.at<double>(0,0) = 0; RT.at<double>(0,1) = -1; RT.at<double>(0,2) = 0; RT.at<double>(0,3) = rgb_2_lidar[0];
-    RT.at<double>(1,0) = 0; RT.at<double>(1,1) = 0; RT.at<double>(1,2) = -1; RT.at<double>(1,3) = rgb_2_lidar[1];
-    RT.at<double>(2,0) = 1; RT.at<double>(2,1) = 0; RT.at<double>(2,2) = 0; RT.at<double>(2,3) = rgb_2_lidar[2];
+    RT.at<double>(0,0) = 0.00639172; RT.at<double>(0,1) = -0.999441; RT.at<double>(0,2) = -0.0328174; RT.at<double>(0,3) = rgb_2_lidar[0];
+    RT.at<double>(1,0) = 0.000247958; RT.at<double>(1,1) = 0.0328196; RT.at<double>(1,2) = -0.999461; RT.at<double>(1,3) = rgb_2_lidar[1];
+    RT.at<double>(2,0) = 0.99998; RT.at<double>(2,1) = 0.00638014; RT.at<double>(2,2) = 0.000457593; RT.at<double>(2,3) = rgb_2_lidar[2];
     RT.at<double>(3,0) = 0.0; RT.at<double>(3,1) = 0.0; RT.at<double>(3,2) = 0.0; RT.at<double>(3,3) = 1.0;
     
     R_rect_00.at<double>(0,0) = 1; R_rect_00.at<double>(0,1) = 0; R_rect_00.at<double>(0,2) = 0; R_rect_00.at<double>(0,3) = 0.0;
